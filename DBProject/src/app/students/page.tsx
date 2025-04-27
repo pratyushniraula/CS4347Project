@@ -24,13 +24,13 @@ import {
 
 // Define the Student type
 interface Student {
-  Student_id: string;
-  Name: string;
-  Address: string;
-  Phone_no: string;
-  Date_of_birth: string;
-  GPA: number;
-  Year: number;
+  studentID: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  dateOfBirth: string;
+  gpa: number;
+  year: string; // year is a string like freshman, sophomore, etc.
 }
 
 const StudentsPage: React.FC = () => {
@@ -42,10 +42,9 @@ const StudentsPage: React.FC = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        // TODO: Replace with actual database call
-        // const studentsData = await getStudents();
-        // setStudents(studentsData);
-        console.log("Implement database fetch logic here!");
+        const response = await fetch('/api/students'); // Make sure this API endpoint returns the list of students
+        const data = await response.json();
+        setStudents(data);
       } catch (error) {
         console.error("Error fetching students:", error);
       }
@@ -54,9 +53,29 @@ const StudentsPage: React.FC = () => {
     fetchStudents();
   }, []);
 
+  const handleDelete = async (studentID: string) => {
+    try {
+      // Send DELETE request to API
+      const response = await fetch(`/api/students/${studentID}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete student');
+      }
+
+      // Remove the student from the state
+      setStudents(prevStudents => prevStudents.filter(student => student.studentID !== studentID));
+    } catch (error) {
+      console.error("Error deleting student:", error);
+    }
+  };
+
   const filteredStudents = students.filter(student => {
-    const searchMatch = student.Name.toLowerCase().includes(searchQuery.toLowerCase());
-    const yearMatch = yearFilter === '' || student.Year.toString() === yearFilter;
+    const searchMatch = `${student.firstName} ${student.lastName}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const yearMatch = yearFilter === '' || student.year.toLowerCase() === yearFilter.toLowerCase();
     return searchMatch && yearMatch;
   });
 
@@ -87,7 +106,6 @@ const StudentsPage: React.FC = () => {
             <TableHead>Student ID</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Address</TableHead>
-            <TableHead>Phone No</TableHead>
             <TableHead>Date of Birth</TableHead>
             <TableHead>GPA</TableHead>
             <TableHead>Year</TableHead>
@@ -96,14 +114,13 @@ const StudentsPage: React.FC = () => {
         </TableHeader>
         <TableBody>
           {filteredStudents.map(student => (
-            <TableRow key={student.Student_id}>
-              <TableCell>{student.Student_id}</TableCell>
-              <TableCell>{student.Name}</TableCell>
-              <TableCell>{student.Address}</TableCell>
-              <TableCell>{student.Phone_no}</TableCell>
-              <TableCell>{student.Date_of_birth}</TableCell>
-              <TableCell>{student.GPA}</TableCell>
-              <TableCell>{student.Year}</TableCell>
+            <TableRow key={student.studentID}>
+              <TableCell>{student.studentID}</TableCell>
+              <TableCell>{`${student.firstName} ${student.lastName}`}</TableCell>
+              <TableCell>{student.address}</TableCell>
+              <TableCell>{new Date(student.dateOfBirth).toLocaleDateString("en-US", {year: "numeric",month: "long",day: "numeric"})}</TableCell>
+              <TableCell>{student.gpa}</TableCell>
+              <TableCell>{student.year}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -115,13 +132,13 @@ const StudentsPage: React.FC = () => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link href={`/students/${student.Student_id}`}>
+                      <Link href={`/students/${student.studentID}`}>
                         View/Edit
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                      <Button variant="destructive" size="sm">
+                      <Button variant="destructive" size="sm"  onClick={() => handleDelete(student.studentID)}>
                         Delete
                       </Button>
                     </DropdownMenuItem>

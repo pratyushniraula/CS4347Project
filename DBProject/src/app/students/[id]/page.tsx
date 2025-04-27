@@ -5,48 +5,61 @@ import { useParams, useRouter } from 'next/navigation';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 // Define the Student type
 interface Student {
-  Student_id: string;
-  Name: string;
-  Address: string;
-  Phone_no: string;
-  Date_of_birth: string;
-  GPA: number;
-  Year: number;
+  studentID: string;
+  firstName: string;
+  lastName: string;
+  year: string;
+  dateOfBirth: string; // Date of birth as a string
+  address: string;
+  gpa: number;
 }
 
 const StudentDetailPage: React.FC = () => {
   const { id } = useParams();
   const router = useRouter();
   const [student, setStudent] = useState<Student | null>(null);
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [address, setAddress] = useState('');
-  const [phoneNo, setPhoneNo] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
+  const [dateOfBirth, setDob] = useState<Date | undefined>(undefined);
   const [gpa, setGPA] = useState('');
   const [year, setYear] = useState('');
 
-  // TODO: Fetch student data from the database based on the ID
+  // Fetch student data based on ID
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        // TODO: Replace with actual database call
-        // const studentData = await getStudent(id);
-        // setStudent(studentData);
-        // setName(studentData.Name);
-        // setAddress(studentData.Address);
-        // setPhoneNo(studentData.Phone_no);
-        // setDateOfBirth(new Date(studentData.Date_of_birth));
-        // setGPA(studentData.GPA.toString());
-        // setYear(studentData.Year.toString());
-        console.log("Implement database fetch logic here!");
+        const response = await fetch(`/api/students/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch student data');
+        }
+
+        const studentData: Student = await response.json();
+        setStudent(studentData);
+
+        // Set initial form values from fetched data
+        setFirstName(studentData.firstName);
+        setLastName(studentData.lastName);
+        setAddress(studentData.address);
+        setYear(studentData.year);
+        setGPA(studentData.gpa.toString());
+
+        // Validate and set DOB (Date)
+        const parsedDob = new Date(studentData.dateOfBirth);
+        if (!isNaN(parsedDob.getTime())) {
+          setDob(parsedDob);
+        } else {
+          console.log(studentData);
+          console.error("Invalid DOB value:", studentData.dateOfBirth);
+        }
       } catch (error) {
         console.error("Error fetching student data:", error);
       }
@@ -55,22 +68,38 @@ const StudentDetailPage: React.FC = () => {
     fetchStudentData();
   }, [id]);
 
-  const handleSave = () => {
-    if (!student) return;
+  const handleSave = async () => {
+    if (!student || !dateOfBirth) return;
 
-    // TODO: call updateStudent(id, data) here
+    // Prepare updated student data with DOB in ISO format
     const updatedStudent = {
       ...student,
-      Name: name,
-      Address: address,
-      Phone_no: phoneNo,
-      Date_of_birth: dateOfBirth?.toISOString().slice(0, 10) || '',
-      GPA: parseFloat(gpa),
-      Year: parseInt(year),
+      firstName,
+      lastName,
+      address,
+      dateOfBirth: dateOfBirth.toISOString().slice(0, 10), // Get YYYY-MM-DD format
+      gpa: parseFloat(gpa),
+      year,
     };
-    console.log('Saving student:', updatedStudent);
-    // After successful save, navigate back to the students list
-    router.push('/students');
+
+    try {
+      const response = await fetch(`/api/students/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedStudent),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update student');
+      }
+
+      // After successful save, navigate back to the students list
+      router.push('/students');
+    } catch (error) {
+      console.error('Error saving student:', error);
+    }
   };
 
   if (!student) {
@@ -83,12 +112,21 @@ const StudentDetailPage: React.FC = () => {
 
       <div className="grid gap-4">
         <div>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="firstName">First Name</Label>
           <Input
             type="text"
-            id="name"
-            value={name}
-            onChange={e => setName(e.target.value)}
+            id="firstName"
+            value={firstName}
+            onChange={e => setFirstName(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input
+            type="text"
+            id="lastName"
+            value={lastName}
+            onChange={e => setLastName(e.target.value)}
           />
         </div>
         <div>
@@ -101,16 +139,7 @@ const StudentDetailPage: React.FC = () => {
           />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
-          <Input
-            type="text"
-            id="phone"
-            value={phoneNo}
-            onChange={e => setPhoneNo(e.target.value)}
-          />
-        </div>
-        <div>
-        <Label>Date of Birth</Label>
+          <Label>Date of Birth</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -128,10 +157,8 @@ const StudentDetailPage: React.FC = () => {
               <Calendar
                 mode="single"
                 selected={dateOfBirth}
-                onSelect={setDateOfBirth}
-                disabled={(date) =>
-                  date > new Date() || date < new Date("1900-01-01")
-                }
+                onSelect={setDob}
+                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                 initialFocus
               />
             </PopoverContent>
@@ -148,12 +175,17 @@ const StudentDetailPage: React.FC = () => {
         </div>
         <div>
           <Label htmlFor="year">Year</Label>
-          <Input
-            type="number"
+          <select
             id="year"
             value={year}
             onChange={e => setYear(e.target.value)}
-          />
+            className="w-full p-2 border border-gray-300 rounded"
+          >
+            <option value="Freshman">Freshman</option>
+            <option value="Sophomore">Sophomore</option>
+            <option value="Junior">Junior</option>
+            <option value="Senior">Senior</option>
+          </select>
         </div>
       </div>
 

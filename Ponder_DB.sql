@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS Classes (
     semester VARCHAR(10),
     year VARCHAR(10),
     location VARCHAR(50),
-    schedule VARCHAR(20),
+    schedule VARCHAR(50),
     teacherID INT,
     FOREIGN KEY (teacherID) REFERENCES Teachers(teacherID)
 );
