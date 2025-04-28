@@ -35,6 +35,7 @@ students_df = pd.DataFrame(students)
 ## teachers
 teachers = []
 teacher_id_start = 5000
+teacher_office_start = 101
 teacher_counter = 0
 num_of_teachers = {
     "Math": 4, "English": 5, "Science": 5, "History": 4, "Electives": 4
@@ -50,11 +51,43 @@ for dept, count in num_of_teachers.items():
             "phone": fake.phone_number(),
             "subject": dept,
             "department": dept,
-            "teacherAssistantID": random.choice(assistant_pool) if random.random() < 0.3 else None
+            "officeLocation":"Office " + str(teacher_office_start + teacher_counter),
+            "teacherAssistantID": random.choice(assistant_pool) if random.random() < 0.3 else "NULL"
         })
         teacher_counter += 1
 
 teachers_df = pd.DataFrame(teachers)
+
+## office hours
+office_hours = []
+
+days_options = [
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
+]
+
+for teacher in teachers:
+    day1 = random.choice(days_options)
+    day2 = random.choice([d for d in days_options if d != day1])
+    start_hour = random.choice([7, 8, 3, 4])  # Morning (7am/8am) or Afternoon (3pm/4pm)
+    am_pm = "AM" if start_hour < 12 else "PM"
+    start_minute = random.choice(["00", "30"])
+    
+    end_hour = start_hour + 1 if start_hour != 11 else 12
+    end_am_pm = "AM" if end_hour < 12 else "PM"
+    
+    office_hour1 = f"{day1} {start_hour}:{start_minute} {am_pm} - {end_hour}:{start_minute} {end_am_pm}"
+    office_hour2 = f"{day2} {start_hour}:{start_minute} {am_pm} - {end_hour}:{start_minute} {end_am_pm}"
+    
+    office_hours.append({
+        "teacherID": teacher["teacherID"],
+        "officeHours": f"{office_hour1} and {office_hour2}"
+    })
+
+office_hours_df = pd.DataFrame(office_hours)
+
+## merge it back
+teachers_df = teachers_df.merge(office_hours_df, on="teacherID")
+
 
 ## attendance
 school_days = 90

@@ -75,7 +75,7 @@ const StudentsPage: React.FC = () => {
     const searchMatch = `${student.firstName} ${student.lastName}`
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const yearMatch = yearFilter === '' || student.year.toLowerCase() === yearFilter.toLowerCase();
+    const yearMatch = student.year.toLowerCase().includes(yearFilter.toLowerCase());
     return searchMatch && yearMatch;
   });
 

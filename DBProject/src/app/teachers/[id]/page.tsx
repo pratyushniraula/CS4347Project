@@ -18,38 +18,46 @@ interface Teacher {
   Office_location: string;
   Office_hours: string;
   Teacher_assistant_id: string;
+  TeacherAssistant: string
 }
 
 const TeacherDetailPage: React.FC = () => {
   const { id } = useParams();
   const router = useRouter();
   const [teacher, setTeacher] = useState<Teacher | null>(null);
-    const [name, setName] = useState('');
-    const [subject, setSubject] = useState('');
-    const [department, setDepartment] = useState('');
-    const [phoneNo, setPhoneNo] = useState('');
-    const [email, setEmail] = useState('');
-    const [officeLocation, setOfficeLocation] = useState('');
-    const [officeHours, setOfficeHours] = useState('');
-    const [teacherAssistantId, setTeacherAssistantId] = useState('');
-    const [teacherAssistant, setTeacherAssistant] = useState<TeacherAssistant | null>(null);
+  const [name, setName] = useState('');
+  const [subject, setSubject] = useState('');
+  const [department, setDepartment] = useState('');
+  const [phoneNo, setPhoneNo] = useState('');
+  const [email, setEmail] = useState('');
+  const [officeLocation, setOfficeLocation] = useState('');
+  const [officeHours, setOfficeHours] = useState('');
+  const [teacherAssistantId, setTeacherAssistantId] = useState('');
+  const [teacherAssistant, setTeacherAssistant] = useState('');
 
-  // TODO: Fetch teacher data from the database based on the ID
+  // Fetch teacher data based on ID
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
-        // TODO: Replace with actual database call
-        // const teacherData = await getTeacher(id);
-        // setTeacher(teacherData);
-        // setName(teacherData.Name);
-        // setSubject(teacherData.Subject);
-        // setDepartment(teacherData.Department);
-        // setPhoneNo(teacherData.Phone_no);
-        // setEmail(teacherData.Email);
-        // setOfficeLocation(teacherData.Office_location);
-        // setOfficeHours(teacherData.Office_hours);
-        // setTeacherAssistantId(teacherData.Teacher_assistant_id);
-        console.log("Implement database fetch logic here!");
+        // Replace with actual API call to fetch teacher data
+        const response = await fetch(`/api/teachers/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch teacher data');
+        }
+
+        const teacherData: Teacher = await response.json();
+        setTeacher(teacherData);
+
+        // Set initial form values from fetched data
+        setName(teacherData.Name);
+        setSubject(teacherData.Subject);
+        setDepartment(teacherData.Department);
+        setPhoneNo(teacherData.Phone_no);
+        setEmail(teacherData.Email);
+        setOfficeLocation(teacherData.Office_location);
+        setOfficeHours(teacherData.Office_hours);
+        setTeacherAssistantId(teacherData.Teacher_assistant_id);
+        setTeacherAssistant(teacherData.TeacherAssistant);
       } catch (error) {
         console.error("Error fetching teacher data:", error);
       }
@@ -58,35 +66,42 @@ const TeacherDetailPage: React.FC = () => {
     fetchTeacherData();
   }, [id]);
 
-  useEffect(() => {
-    const loadTeacherAssistant = async () => {
-      if (teacherAssistantId) {
-        const ta = await getTeacherAssistant(teacherAssistantId);
-        setTeacherAssistant(ta);
-      }
-    };
-    loadTeacherAssistant();
-  }, [teacherAssistantId]);
+  // Fetch teacher assistant data based on teacherAssistantId
 
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!teacher) return;
 
-    // TODO: call updateTeacher(id, data) here
     const updatedTeacher = {
       ...teacher,
-        Name: name,
-        Subject: subject,
-        Department: department,
-        Phone_no: phoneNo,
-        Email: email,
-        Office_location: officeLocation,
-        Office_hours: officeHours,
-        Teacher_assistant_id: teacherAssistantId,
+      Name: name,
+      Subject: subject,
+      Department: department,
+      Phone_no: phoneNo,
+      Email: email,
+      Office_location: officeLocation,
+      Office_hours: officeHours,
+      Teacher_assistant_id: teacherAssistantId,
     };
-    console.log('Saving teacher:', updatedTeacher);
-    // After successful save, navigate back to the teachers list
-    router.push('/teachers');
+
+    try {
+      // Update teacher data (call the API to update the teacher)
+      const response = await fetch(`/api/teachers/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTeacher),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update teacher');
+      }
+
+      // After successful save, navigate back to the teachers list
+      router.push('/teachers');
+    } catch (error) {
+      console.error('Error saving teacher:', error);
+    }
   };
 
   if (!teacher) {
@@ -126,10 +141,10 @@ const TeacherDetailPage: React.FC = () => {
           />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phoneNo">Phone Number</Label>
           <Input
             type="text"
-            id="phone"
+            id="phoneNo"
             value={phoneNo}
             onChange={e => setPhoneNo(e.target.value)}
           />
@@ -170,9 +185,9 @@ const TeacherDetailPage: React.FC = () => {
             onChange={e => setTeacherAssistantId(e.target.value)}
           />
           {teacherAssistant && (
-              <div>
-                Teacher Assistant: {teacherAssistant.name}
-              </div>
+            <div>
+              Teacher Assistant: {teacherAssistant}
+            </div>
           )}
         </div>
       </div>

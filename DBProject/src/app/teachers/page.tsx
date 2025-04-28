@@ -20,19 +20,19 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 // Define the Teacher type
 interface Teacher {
-  Teacher_id: string;
-  Name: string;
-  Subject: string;
-  Department: string;
-  Phone_no: string;
-  Email: string;
-  Office_location: string;
-  Office_hours: string;
-  Teacher_assistant_id: string;
+  teacherID: string;
+  name: string;
+  subject: string;
+  department: string;
+  phone: string;
+  email: string;
+  officeLocation: string;
+  officeHours: string;
+  teacherAssistantID: string;
 }
 
 const TeachersPage: React.FC = () => {
@@ -40,14 +40,12 @@ const TeachersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
 
-  // TODO: Fetch teachers from the database on mount
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        // TODO: Replace with actual database call
-        // const teachersData = await getTeachers();
-        // setTeachers(teachersData);
-        console.log("Implement database fetch logic here!");
+        const response = await fetch('/api/teachers'); // Make sure this API endpoint returns the list of teachers
+        const data = await response.json();
+        setTeachers(data);
       } catch (error) {
         console.error("Error fetching teachers:", error);
       }
@@ -56,10 +54,25 @@ const TeachersPage: React.FC = () => {
     fetchTeachers();
   }, []);
 
-  const filteredTeachers = teachers.filter(teacher => {
-    const searchMatch = teacher.Name.toLowerCase().includes(searchQuery.toLowerCase());
-    const departmentMatch = departmentFilter === '' || teacher.Department.toLowerCase() === departmentFilter.toLowerCase();
+  const handleDelete = async (teacherID: string) => {
+    try {
+      const response = await fetch(`/api/teachers/${teacherID}`, {
+        method: 'DELETE',
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to delete teacher');
+      }
+
+      setTeachers(prevTeachers => prevTeachers.filter(teacher => teacher.teacherID !== teacherID));
+    } catch (error) {
+      console.error("Error deleting teacher:", error);
+    }
+  };
+
+  const filteredTeachers = teachers.filter(teacher => {
+    const searchMatch = teacher.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const departmentMatch = teacher.department.toLowerCase().includes(departmentFilter.toLowerCase());
     return searchMatch && departmentMatch;
   });
 
@@ -78,7 +91,7 @@ const TeachersPage: React.FC = () => {
         />
         <Input
           type="text"
-          placeholder="Department"
+          placeholder="Filter by department"
           value={departmentFilter}
           onChange={e => setDepartmentFilter(e.target.value)}
         />
@@ -95,40 +108,44 @@ const TeachersPage: React.FC = () => {
             <TableHead>Email</TableHead>
             <TableHead>Office Location</TableHead>
             <TableHead>Office Hours</TableHead>
-            <TableHead>Teacher Assistant ID</TableHead>
+            <TableHead>Assistant ID</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredTeachers.map(teacher => (
-            <TableRow key={teacher.Teacher_id}>
-              <TableCell>{teacher.Teacher_id}</TableCell>
-              <TableCell>{teacher.Name}</TableCell>
-              <TableCell>{teacher.Subject}</TableCell>
-              <TableCell>{teacher.Department}</TableCell>
-              <TableCell>{teacher.Phone_no}</TableCell>
-              <TableCell>{teacher.Email}</TableCell>
-              <TableCell>{teacher.Office_location}</TableCell>
-              <TableCell>{teacher.Office_hours}</TableCell>
-              <TableCell>{teacher.Teacher_assistant_id}</TableCell>
+            <TableRow key={teacher.teacherID}>
+              <TableCell>{teacher.teacherID}</TableCell>
+              <TableCell>{teacher.name}</TableCell>
+              <TableCell>{teacher.subject}</TableCell>
+              <TableCell>{teacher.department}</TableCell>
+              <TableCell>{teacher.phone}</TableCell>
+              <TableCell>{teacher.email}</TableCell>
+              <TableCell>{teacher.officeLocation}</TableCell>
+              <TableCell>{teacher.officeHours}</TableCell>
+              <TableCell>{teacher.teacherAssistantID}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
                       <span className="sr-only">Open menu</span>
-                      <Edit className="h-4 w-4"/>
+                      <Edit className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link href={`/teachers/${teacher.Teacher_id}`}>
+                      <Link href={`/teachers/${teacher.teacherID}`}>
                         View/Edit
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                      <Button variant="destructive" size="sm">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(teacher.teacherID)}
+                      >
                         Delete
                       </Button>
                     </DropdownMenuItem>

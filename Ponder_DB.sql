@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS Teachers (
     subject VARCHAR(50),
     department VARCHAR(50),
     officeLocation VARCHAR(50),
-    officeHours VARCHAR(50)
+    officeHours VARCHAR(70),
+    teacherAssistantID INT,
+    FOREIGN KEY (teacherAssistantID) REFERENCES Students(studentID)
 );
 
 CREATE TABLE IF NOT EXISTS Classes (
@@ -33,7 +35,7 @@ CREATE TABLE IF NOT EXISTS Classes (
     semester VARCHAR(10),
     year VARCHAR(10),
     location VARCHAR(50),
-    schedule VARCHAR(50),
+    schedule VARCHAR(70),
     teacherID INT,
     FOREIGN KEY (teacherID) REFERENCES Teachers(teacherID)
 );
