@@ -89,6 +89,8 @@ export async function DELETE(req: Request, context: { params: { id: string } }) 
   const { id } = await context.params; // Get the student ID from the URL
 
   try {
+    await queryDb('UPDATE teachers SET teacherAssistantID = NULL WHERE teacherAssistantID = ?', [id]);
+
     // Delete student by ID from the database
     await queryDb('DELETE FROM attendance WHERE studentID = ?', [id]);
     await queryDb('DELETE FROM enrollment WHERE studentID = ?', [id]);
